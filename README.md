@@ -77,7 +77,7 @@ To add or rename a sellable module, edit the `modules` list in `src/meta.json`. 
 
 The screenshots come from the 247HRM demo company. Check them before making the site public:
 
-- `docs/img/r-profile.jpg` shows a demo user's name, designation and email address. The builder hides it from client copies by default, but the file is still in the repository.
+- The My Profile screenshot was removed from this public repository because it showed a demo user's email address.
 - Several list screenshots show demo employee names and salary totals.
 
 Replace or blur these, or keep the repository and its Pages site private.
