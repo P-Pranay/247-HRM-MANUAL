@@ -1,0 +1,336 @@
+<script id="app">
+const ALL = JSON.parse(document.getElementById('data').textContent);
+const META = JSON.parse(document.getElementById('meta').textContent);
+const MODS = META.modules || [];
+const MODNAME = Object.fromEntries(MODS.map(m => [m[0], m[1]]));
+const ROLES = [['hr','HR / Admin','Full HR and admin menus: settings, masters, HR operations, reports'],['manager','Manager','Self-service plus team approvals and the Manager dashboard'],['employee','Employee (ESS)','Self-service only: profile, attendance, leave, payslip, claims']];
+let DATA, byId, groups, ISSUES, PREVIEW = null;
+const GICON = {'Getting started':'rocket_launch','Implementation setup':'checklist','Settings':'settings','Masters':'apps','Masters — Organization':'domain','Masters — Attendance':'schedule','Masters — Salary':'payments','Masters — Statutory':'gavel','Masters — Income Tax Setup':'calculate','Masters — Others':'category','HR operations':'badge','My Applications (self-service)':'person','Dashboards & Reports':'analytics','Help':'help'};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $ = id => document.getElementById(id);
+const store = { get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
+
+function searchText(s){
+  return [s.title, s.group, s.path, s.summary, s.next, ...(s.can||[]), ...(s.rules||[]), ...(s.tips||[]), ...(s.watch||[]), ...(s.tabs||[]),
+    ...(s.concepts||[]).flat(), ...(s.fields||[]).flatMap(st => [st.step, ...st.fields.flatMap(f => [f.label, f.hint||''])]), ...(s.extra||[]).map(e => e[0] + ' ' + e[1])].join(' \n ');
+}
+function setData(list){
+  DATA = list; DATA.forEach(s => s._t = searchText(s));
+  byId = Object.fromEntries(DATA.map(s => [s.id, s]));
+  groups = []; DATA.forEach(s => { let g = groups.find(x => x.name === s.group); if (!g) groups.push(g = {name: s.group, items: []}); g.items.push(s); });
+  ISSUES = DATA.filter(s => s.watch && s.watch.length);
+}
+
+/* ---------- filtering for a client profile ---------- */
+function applyProfile(p){
+  const mods = new Set(['base', ...p.modules]);
+  return ALL.filter(s => p.screens ? p.screens.includes(s.id) : (mods.has(s.mod) && s.roles.some(r => p.roles.includes(r))))
+    .map(s => {
+      const c = JSON.parse(JSON.stringify(s));
+      if (c.extra) c.extra = c.extra.filter(e => !e[2] || mods.has(e[2]));
+      if (!p.shots) c.img = '';
+      if (p.hideProfileShot && c.id === 'ess-my-profile') c.img = '';
+      return c;
+    });
+}
+function defaultScreens(p){
+  const mods = new Set(['base', ...p.modules]);
+  return ALL.filter(s => mods.has(s.mod) && s.roles.some(r => p.roles.includes(r)) && (p.setup || s.id !== 'setup')
+    && (!p.menuNames || matchesMenu(s, p.menuNames))).map(s => s.id);
+}
+const norm = t => String(t||'').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim();
+function matchesMenu(s, names){
+  if (['login','welcome','layout'].includes(s.id)) return true;
+  const hay = norm(s.title + ' ' + s.path);
+  return names.some(n => { const k = norm(n); return k.length > 2 && (hay.includes(k) || norm(s.title).split(' (')[0] === k); });
+}
+
+/* ---------- navigation ---------- */
+function renderNav(active){
+  const saved = store.get('hrm-closed', []);
+  let h = '';
+  groups.forEach(g => {
+    const closed = saved.includes(g.name) && !g.items.some(i => i.id === active);
+    h += `<div class="grp${closed?' closed':''}" data-g="${esc(g.name)}"><button><span class="ms">${GICON[g.name]||'folder'}</span>${esc(g.name)}<span class="ms chev">expand_more</span></button><ul>` +
+      g.items.map(s => `<li><a href="#${s.id}" class="${s.id===active?'on':''}"><span class="ms">${s.icon}</span>${esc(s.title)}</a></li>`).join('') + '</ul></div>';
+  });
+  h += `<div class="grp" data-g="Help"><button><span class="ms">help</span>Help<span class="ms chev">expand_more</span></button><ul>` +
+    (META.export ? '' : `<li><a href="#builder" class="${active==='builder'?'on':''}"><span class="ms">tune</span>Client manual builder</a></li>`) +
+    `<li><a href="#troubleshooting" class="${active==='troubleshooting'?'on':''}"><span class="ms">build</span>Common mistakes & fixes</a></li><li><a href="#about" class="${active==='about'?'on':''}"><span class="ms">info</span>About this manual</a></li></ul></div>`;
+  $('side').innerHTML = h;
+  $('side').querySelectorAll('.grp>button').forEach(b => b.onclick = () => {
+    b.parentElement.classList.toggle('closed');
+    store.set('hrm-closed', [...$('side').querySelectorAll('.grp.closed')].map(x => x.dataset.g));
+  });
+  const on = $('side').querySelector('a.on'); if (on) on.scrollIntoView({block:'nearest'});
+}
+function banner(){
+  if (META.export) return '';
+  if (!PREVIEW) return '';
+  return `<div class="pv"><span class="ms">visibility</span><div><b>Previewing: ${esc(PREVIEW.client || 'client manual')}</b> — ${DATA.length} screens · ${PREVIEW.modules.map(m=>MODNAME[m]).join(', ') || 'base only'} · ${PREVIEW.roles.map(r=>ROLES.find(x=>x[0]===r)[1]).join(', ')}</div><button class="btn sm" id="pvBack">Edit</button><button class="btn sm ghost" id="pvExit">Exit preview</button></div>`;
+}
+function wireBanner(){
+  const b = $('pvBack'), x = $('pvExit');
+  if (b) b.onclick = () => { location.hash = 'builder'; };
+  if (x) x.onclick = () => { PREVIEW = null; setData(ALL); route(); };
+}
+
+function list(title, icon, items, cls){
+  if (!items || !items.length) return '';
+  return `<div class="box ${cls||''}"><h3><span class="ms">${icon}</span>${title}</h3><ul class="chk">${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+}
+function imgSrc(s){ return s.imgData || `img/${s.img}.jpg`; }
+
+function renderHome(){
+  const who = META.client || (PREVIEW && PREVIEW.client);
+  const roleLabel = META.roleLabel || (PREVIEW ? PREVIEW.roles.map(r => ROLES.find(x=>x[0]===r)[1]).join(', ') : '');
+  const modCount = META.export ? (META.modulesIncluded||[]).length : (PREVIEW ? PREVIEW.modules.length : 0);
+  const scoped = META.export || PREVIEW;
+  let h = banner() + `<div class="hero"><h1>${who ? esc(who) + ' — 247HRM user manual' : '247HRM user manual'}</h1><p>Step-by-step help for ${roleLabel ? esc(roleLabel) + ' users' : 'HR and Admin users'}: where every screen is, what it does, the fields it asks for and the rules it checks. Use the search box to find any screen, field or rule.</p>
+  <div class="stats"><div class="stat"><b>${DATA.length}</b>screens documented</div><div class="stat"><b>${DATA.filter(s=>s.img).length}</b>screenshots</div>${scoped ? `<div class="stat"><b>${modCount}</b>modules</div>` : `<div class="stat"><b>34</b>masters</div><div class="stat"><b>${META.reports}</b>reports listed</div>`}</div>
+  ${META.export ? `<button class="btn light" id="printAll"><span class="ms">print</span> Print / Save as PDF</button>` : ''}</div>`;
+  if (!META.export && !PREVIEW) h += `<div class="next"><span class="ms">tune</span><div><b>Sharing with a client?</b> Use the <a href="#builder">client manual builder</a> to pick the modules they purchased and the roles that will use it, then download a manual with only those menus.</div></div>`;
+  if (byId['setup']) h += `<div class="next"><span class="ms">tips_and_updates</span><div><b>New implementation?</b> Start with the <a href="#setup">recommended setup sequence</a>.</div></div>`;
+  groups.forEach(g => {
+    h += `<h2 class="sec">${esc(g.name)}</h2><div class="cards">` + g.items.map(s => `<a class="card" href="#${s.id}"><span class="ic"><span class="ms">${s.icon}</span></span><span><b>${esc(s.title)}</b><span class="d">${esc(s.summary)}</span></span></a>`).join('') + '</div>';
+  });
+  $('main').innerHTML = h; wireBanner();
+  if ($('printAll')) $('printAll').onclick = printAll;
+}
+
+function fieldsTable(steps){
+  if (!steps || !steps.length) return '';
+  let rows = '';
+  steps.forEach((st, i) => {
+    rows += `<tr class="step"><td colspan="3">${i+1}. ${esc(st.step)}${st.sub?`<small>${esc(st.sub)}</small>`:''}</td></tr>`;
+    st.fields.forEach(f => rows += `<tr><td>${esc(f.label)}</td><td>${f.req?'<span class="req">Required</span>':'<span class="opt">Optional</span>'}</td><td>${esc(f.hint||'')}</td></tr>`);
+  });
+  return `<div class="box"><h3><span class="ms">edit_note</span>Fields on the Add / Edit form</h3><table class="fields"><thead><tr><th>Field</th><th>Status</th><th>Help</th></tr></thead><tbody>${rows}</tbody></table><p class="note">Field names as shown on screen. Some fields appear only after a related option is chosen.</p></div>`;
+}
+
+function renderScreen(s){
+  const idx = DATA.indexOf(s); const prev = DATA[idx-1], next = DATA[idx+1];
+  let h = banner() + `<div class="crumb"><a href="#">Home</a><span class="ms">chevron_right</span>${esc(s.group)}</div>
+  <div class="head"><div class="ic"><span class="ms">${s.icon}</span></div><div><h1>${esc(s.title)}</h1><div class="path"><span class="ms">route</span>${esc(s.path)}</div>
+  ${META.export ? '' : `<div class="tags">${s.mod!=='base'?`<span class="tag mod">${esc(MODNAME[s.mod]||s.mod)}</span>`:'<span class="tag mod">All clients</span>'}${s.roles.map(r=>`<span class="tag">${esc(ROLES.find(x=>x[0]===r)[1])}</span>`).join('')}</div>`}</div></div>
+  <p class="summary">${esc(s.summary)}</p>`;
+  if (s.next) h += `<div class="next"><span class="ms">arrow_circle_right</span><div><b>Do this first:</b> ${esc(s.next)}</div></div>`;
+  if (s.img) h += `<figure class="shot"><img src="${imgSrc(s)}" alt="Screenshot: ${esc(s.title)}" loading="lazy"><figcaption>Screenshot from the demo environment — click to enlarge</figcaption></figure>`;
+  if (s.tabs && s.tabs.length) h += `<div class="box"><h3><span class="ms">tab</span>Tabs on this screen</h3><div class="chips">${s.tabs.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div></div>`;
+  h += list(s.id==='setup'?'Steps, in order':'What you can do here', s.id==='setup'?'format_list_numbered':'checklist', s.can, s.id==='setup'?'steps':'');
+  (s.extra||[]).forEach(e => { if (e[1]) h += `<div class="box extra"><h3><span class="ms">info</span>${esc(e[0])}</h3><p>${esc(e[1])}</p></div>`; });
+  h += fieldsTable(s.fields);
+  if (s.concepts && s.concepts.length) h += `<div class="box"><h3><span class="ms">menu_book</span>Key concepts</h3>${s.concepts.map(([a,b]) => `<div class="concept"><b>${esc(a)}</b><p>${esc(b)}</p></div>`).join('')}</div>`;
+  h += `<div class="grid"><div>${list('Important rules','policy',s.rules,'rules')}</div><div>${list('Tips to go faster','bolt',s.tips,'tips')}</div></div>`;
+  h += list('Watch out for','error',s.watch,'watch');
+  h += `<div class="pn">${prev?`<a href="#${prev.id}"><small>← Previous</small>${esc(prev.title)}</a>`:'<span></span>'}${next?`<a class="r" href="#${next.id}"><small>Next →</small>${esc(next.title)}</a>`:'<span></span>'}</div>`;
+  $('main').innerHTML = h; wireBanner();
+  $('main').querySelectorAll('.shot img').forEach(im => im.onclick = () => { $('lbImg').src = im.src; $('lb').classList.add('on'); });
+}
+
+function renderTroubleshooting(){
+  let h = banner() + `<div class="head"><div class="ic"><span class="ms">build</span></div><div><h1>Common mistakes & fixes</h1><div class="path"><span class="ms">route</span>Collected from every screen's “Watch out for” notes</div></div></div>
+  <p class="summary">The validation errors and slips users hit most often, screen by screen. Use the search box to find one quickly.</p>`;
+  ISSUES.forEach(s => h += `<div class="box issue"><h4><a href="#${s.id}"><span class="ms">${s.icon}</span> ${esc(s.title)}</a> <span class="note">· ${esc(s.group)}</span></h4><ul class="chk">${s.watch.map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`);
+  $('main').innerHTML = `<div class="watch">${h}</div>`; wireBanner();
+}
+function renderAbout(){
+  const scope = META.export ? `<p>Prepared for <b>${esc(META.client||'your organisation')}</b>${META.roleLabel?` (${esc(META.roleLabel)})`:''}. It covers the modules in your 247HRM subscription: ${esc((META.modulesIncluded||[]).join(', ') || 'core screens')}.</p>` : '';
+  $('main').innerHTML = banner() + `<div class="head"><div class="ic"><span class="ms">info</span></div><div><h1>About this manual</h1><div class="path"><span class="ms">event</span>Prepared ${esc(META.date)}</div></div></div>
+  <div class="box">${scope}<p>Descriptions, rules and tips come from the application's own screens and in-app Guide panels. Screenshots show sample data from the 247HRM demo company, so names and figures will differ from yours.</p>
+  <p>Menus you see depend on the role assigned to your login. Screens and fields can change with product releases; if what you see differs from this manual, the live application is correct. For help, raise a ticket in Help Desk or contact your 247HRM implementation consultant.</p></div>`;
+  wireBanner();
+}
+
+function printAll(){
+  const parts = [];
+  renderHome(); parts.push($('main').innerHTML);
+  DATA.forEach(s => { renderScreen(s); parts.push('<section class="pbreak">' + $('main').innerHTML + '</section>'); });
+  $('main').innerHTML = parts.join('');
+  const imgs = [...$('main').querySelectorAll('img')]; imgs.forEach(i => i.loading = 'eager');
+  Promise.all(imgs.map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => setTimeout(() => { window.print(); }, 300));
+  window.onafterprint = () => route();
+}
+
+/* ---------- client manual builder ---------- */
+let B = store.get('hrm-builder', null) || {client:'', modules: MODS.map(m=>m[0]).filter(k=>!['pms','rewards'].includes(k)), roles:['hr'], shots:true, setup:false, hideProfileShot:true, menuNames:null, menuFile:'', screens:null};
+function saveB(){ store.set('hrm-builder', B); }
+function renderBuilder(){
+  if (!B.screens) B.screens = defaultScreens(B);
+  const sel = new Set(B.screens);
+  const candidates = ALL.filter(s => new Set(['base', ...B.modules]).has(s.mod) && s.roles.some(r => B.roles.includes(r)));
+  const profiles = store.get('hrm-profiles', {});
+  const gmap = {}; candidates.forEach(s => (gmap[s.group] = gmap[s.group] || []).push(s));
+  let h = `<div class="head"><div class="ic"><span class="ms">tune</span></div><div><h1>Client manual builder</h1><div class="path"><span class="ms">info</span>Pick the purchased modules and roles, check the screens, then preview or download</div></div></div>
+  <div class="box"><h3><span class="ms">badge</span>1. Client</h3>
+    <div class="row"><input id="bClient" class="inp" placeholder="Client name, e.g. Saaketh Swathi Shopping Mall" value="${esc(B.client)}">
+    ${Object.keys(profiles).length ? `<select id="bLoad" class="inp sel"><option value="">Load saved profile…</option>${Object.keys(profiles).sort().map(k=>`<option>${esc(k)}</option>`).join('')}</select>` : ''}</div></div>
+  <div class="box"><h3><span class="ms">inventory_2</span>2. Purchased modules</h3>
+    <p class="note">Upload the client's module list (Excel or CSV, one module per row; an optional second column Y/N marks purchased) or tick them below. Getting started, settings, approvals, dashboards and reports are always included.</p>
+    <div class="row"><label class="btn"><span class="ms">upload_file</span> Upload module list<input type="file" id="bModFile" accept=".xlsx,.xls,.csv,.txt" hidden></label>
+    <button class="btn ghost" id="bTpl"><span class="ms">download</span> Download template (.csv)</button>
+    <button class="btn ghost" id="bAll">Select all</button><button class="btn ghost" id="bNone">Clear</button></div>
+    <div id="bModMsg" class="msg"></div>
+    <div class="mods">${MODS.map(m => `<label class="mod ${B.modules.includes(m[0])?'on':''}"><input type="checkbox" data-mod="${m[0]}" ${B.modules.includes(m[0])?'checked':''}><span><b>${esc(m[1])}</b><small>${esc(m[2])}</small></span></label>`).join('')}</div></div>
+  <div class="box"><h3><span class="ms">manage_accounts</span>3. Roles who will use this manual</h3>
+    <div class="mods">${ROLES.map(r => `<label class="mod ${B.roles.includes(r[0])?'on':''}"><input type="checkbox" data-role="${r[0]}" ${B.roles.includes(r[0])?'checked':''}><span><b>${r[1]}</b><small>${r[2]}</small></span></label>`).join('')}</div>
+    <p class="note" style="margin-top:12px">Optional: upload the menu list for this client's role (one menu name per row, as set in Settings &gt; Roles). Only screens matching those menus are kept.</p>
+    <div class="row"><label class="btn ghost"><span class="ms">list</span> Upload role menu list<input type="file" id="bMenuFile" accept=".xlsx,.xls,.csv,.txt" hidden></label>
+    ${B.menuNames ? `<span class="pill">${esc(B.menuFile)} · ${B.menuNames.length} menus <button class="x" id="bMenuClear" title="Remove">×</button></span>` : ''}</div>
+    <div id="bMenuMsg" class="msg"></div></div>
+  <div class="box"><h3><span class="ms">checklist</span>4. Screens to include <span class="count">${sel.size} of ${candidates.length}</span></h3>
+    <div class="row"><label class="opt2"><input type="checkbox" id="oShots" ${B.shots?'checked':''}> Include screenshots</label>
+    <label class="opt2"><input type="checkbox" id="oProf" ${B.hideProfileShot?'checked':''}> Hide the My Profile screenshot (shows demo staff details)</label>
+    <label class="opt2"><input type="checkbox" id="oSetup" ${B.setup?'checked':''}> Include the implementation setup sequence</label>
+    <button class="btn ghost sm" id="bReset">Reset to defaults</button></div>
+    <div class="scr">${Object.entries(gmap).map(([g, items]) => `<div class="scg"><b>${esc(g)}</b>${items.map(s => `<label><input type="checkbox" data-scr="${s.id}" ${sel.has(s.id)?'checked':''}><span class="ms">${s.icon}</span>${esc(s.title)}</label>`).join('')}</div>`).join('')}</div></div>
+  <div class="actions"><button class="btn" id="bPreview"><span class="ms">visibility</span> Preview here</button>
+    <button class="btn primary" id="bDownload"><span class="ms">download</span> Download client manual (.html)</button>
+    <button class="btn ghost" id="bSave"><span class="ms">bookmark_add</span> Save profile</button><span id="bOut" class="msg"></span></div>
+  <p class="note">The download is one self-contained HTML file with the screenshots built in. The client opens it in any browser, searches it, and can print it or save it as PDF from the button on its home page.</p>`;
+  $('main').innerHTML = h;
+  const rebuildDefaults = () => { B.screens = defaultScreens(B); saveB(); renderBuilder(); };
+  $('bClient').oninput = e => { B.client = e.target.value; saveB(); };
+  if ($('bLoad')) $('bLoad').onchange = e => { const p = profiles[e.target.value]; if (p){ B = JSON.parse(JSON.stringify(p)); saveB(); renderBuilder(); } };
+  $('main').querySelectorAll('[data-mod]').forEach(c => c.onchange = () => { B.modules = MODS.map(m=>m[0]).filter(k => $('main').querySelector(`[data-mod="${k}"]`).checked); rebuildDefaults(); });
+  $('main').querySelectorAll('[data-role]').forEach(c => c.onchange = () => { B.roles = ROLES.map(r=>r[0]).filter(k => $('main').querySelector(`[data-role="${k}"]`).checked); rebuildDefaults(); });
+  $('main').querySelectorAll('[data-scr]').forEach(c => c.onchange = () => { B.screens = [...$('main').querySelectorAll('[data-scr]:checked')].map(x=>x.dataset.scr); saveB(); $('main').querySelector('.count').textContent = `${B.screens.length} of ${candidates.length}`; });
+  $('bAll').onclick = () => { B.modules = MODS.map(m=>m[0]); rebuildDefaults(); };
+  $('bNone').onclick = () => { B.modules = []; rebuildDefaults(); };
+  $('bReset').onclick = rebuildDefaults;
+  $('oShots').onchange = e => { B.shots = e.target.checked; saveB(); };
+  $('oProf').onchange = e => { B.hideProfileShot = e.target.checked; saveB(); };
+  $('oSetup').onchange = e => { B.setup = e.target.checked; rebuildDefaults(); };
+  $('bTpl').onclick = () => offerDownload('247HRM-purchased-modules-template.csv', 'Module,Purchased (Y/N)\n' + MODS.map(m => `${m[1]},Y`).join('\n') + '\n', $('bModMsg'));
+  $('bModFile').onchange = e => readList(e.target.files[0], $('bModMsg'), (rows, name) => {
+    const found = new Set(), unknown = [];
+    rows.forEach(r => { const txt = r.find(c => c && !/^(y|n|yes|no|true|false|0|1)$/i.test(String(c).trim())); if (!txt) return;
+      if (/^module/i.test(String(txt).trim())) return;
+      if (r.some(c => /^(n|no|false|0)$/i.test(String(c).trim()))) return;
+      const k = matchModule(String(txt)); k ? found.add(k) : unknown.push(String(txt).trim()); });
+    if (!found.size){ $('bModMsg').innerHTML = `<span class="err">No modules recognised in ${esc(name)}. Use the template, or tick modules below.</span>`; return; }
+    B.modules = MODS.map(m=>m[0]).filter(k => found.has(k)); rebuildDefaults();
+    $('bModMsg').innerHTML = `<span class="ok">${esc(name)}: matched ${found.size} module${found.size>1?'s':''}.</span>` + (unknown.length ? ` <span class="err">Not recognised: ${unknown.map(esc).join(', ')} — tick these manually if they map to a module below.</span>` : '');
+  });
+  $('bMenuFile').onchange = e => readList(e.target.files[0], $('bMenuMsg'), (rows, name) => {
+    const names = rows.map(r => r.find(c => c && String(c).trim())).filter(Boolean).map(String).filter(n => !/^menu/i.test(n.trim()));
+    if (!names.length){ $('bMenuMsg').innerHTML = '<span class="err">No menu names found in the file.</span>'; return; }
+    B.menuNames = names; B.menuFile = name; rebuildDefaults();
+    const hit = defaultScreens(B).length;
+    $('bMenuMsg').innerHTML = `<span class="ok">${esc(name)}: ${names.length} menus read, ${hit} screens matched.</span>`;
+  });
+  if ($('bMenuClear')) $('bMenuClear').onclick = () => { B.menuNames = null; B.menuFile = ''; rebuildDefaults(); };
+  $('bPreview').onclick = () => { PREVIEW = JSON.parse(JSON.stringify(B)); setData(applyProfile(PREVIEW)); location.hash = ''; route(); };
+  $('bSave').onclick = () => { if (!B.client.trim()){ $('bOut').innerHTML = '<span class="err">Enter a client name first.</span>'; return; } const p = store.get('hrm-profiles', {}); p[B.client.trim()] = B; store.set('hrm-profiles', p); $('bOut').innerHTML = `<span class="ok">Saved “${esc(B.client.trim())}” in this browser.</span>`; };
+  $('bDownload').onclick = () => exportManual($('bOut'));
+}
+function matchModule(txt){
+  const t = ' ' + norm(txt) + ' ';
+  let best = null, bestLen = 0;
+  MODS.forEach(m => m[3].split('|').concat([m[1], m[0]]).forEach(a => { const k = norm(a); if (k && t.includes(' ' + k + ' ') && k.length > bestLen){ best = m[0]; bestLen = k.length; } }));
+  return best;
+}
+async function readList(file, msgEl, cb){
+  if (!file) return;
+  msgEl.textContent = 'Reading ' + file.name + '…';
+  try {
+    let rows;
+    if (/\.xlsx?$/i.test(file.name)) {
+      if (!window.XLSX) await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.className = 'ext'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); });
+      const wb = XLSX.read(await file.arrayBuffer(), {type:'array'});
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, blankrows:false});
+    } else {
+      rows = (await file.text()).split(/\r?\n/).filter(l => l.trim()).map(l => l.split(/[,;\t]/).map(c => c.replace(/^"|"$/g,'').trim()));
+    }
+    cb(rows, file.name);
+  } catch (e) { msgEl.innerHTML = `<span class="err">Could not read ${esc(file.name)}. Save it as .xlsx or .csv and try again.</span>`; }
+}
+async function getDownloads(){
+  try { if (!window.claude || !window.claude.use) return null; return await Promise.race([window.claude.use('downloads'), new Promise(r => setTimeout(() => r(null), 3000))]); } catch(e){ return null; }
+}
+async function offerDownload(filename, data, msgEl){
+  const dl = await getDownloads();
+  if (!dl){
+    try {
+      const blob = data instanceof Blob ? data : new Blob([data], {type: filename.endsWith('.csv') ? 'text/csv' : 'text/html'});
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      msgEl.innerHTML = `<span class="ok">Downloaded ${esc(filename)}.</span>`; return true;
+    } catch(e){ msgEl.innerHTML = '<span class="err">Your browser blocked the download.</span>'; return false; }
+  }
+  try { await dl.save({filename, data}); msgEl.innerHTML = `<span class="ok">Saved ${esc(filename)}.</span>`; return true; }
+  catch(e){ msgEl.innerHTML = e && e.code === 'declined' ? '<span class="note">Download cancelled.</span>' : `<span class="err">Download failed (${esc(e && e.code || 'error')}). Try again.</span>`; return false; }
+}
+async function toDataURL(url){
+  const r = await fetch(url); const b = await r.blob();
+  return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
+}
+async function exportManual(msgEl){
+  if (!B.screens || !B.screens.length){ msgEl.innerHTML = '<span class="err">Select at least one screen.</span>'; return; }
+  msgEl.textContent = 'Building the manual…';
+  const p = JSON.parse(JSON.stringify(B));
+  const list = applyProfile(p).map(s => { delete s._t; return s; });
+  for (const s of list) { if (s.img) { try { s.imgData = await toDataURL(`img/${s.img}.jpg`); } catch(e) { s.img = ''; } } }
+  const meta = Object.assign({}, META, {export:true, client: p.client.trim(), modulesIncluded: p.modules.map(m => MODNAME[m]),
+    roleLabel: p.roles.map(r => ROLES.find(x=>x[0]===r)[1]).join(', ')});
+  const doc = document.documentElement.cloneNode(true);
+  doc.querySelector('#data').textContent = JSON.stringify(list).replace(/<\//g, '<\\/');
+  doc.querySelector('#meta').textContent = JSON.stringify(meta).replace(/<\//g, '<\\/');
+  doc.querySelector('#main').innerHTML = ''; doc.querySelector('#side').innerHTML = ''; doc.querySelector('#q').removeAttribute('value');
+  doc.querySelectorAll('script.ext').forEach(x => x.remove());
+  const t = doc.querySelector('title'); t.textContent = (p.client.trim() ? p.client.trim() + ' — ' : '') + '247HRM User Manual';
+  doc.querySelector('.brand small').textContent = p.client.trim() || 'User manual';
+  const html = '<!DOCTYPE html>\n' + doc.outerHTML;
+  const fname = (p.client.trim() || 'Client').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-247HRM-User-Manual.html';
+  await offerDownload(fname, new Blob([html], {type:'text/html'}), msgEl);
+}
+
+/* ---------- search ---------- */
+function hl(text, terms){
+  let t = esc(text);
+  terms.forEach(w => { if (w.length > 1) t = t.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'ig'), '<mark>$1</mark>'); });
+  return t;
+}
+function doSearch(q){
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length){ route(); return; }
+  const scored = [];
+  DATA.forEach(s => {
+    const T = s._t.toLowerCase(); const title = s.title.toLowerCase();
+    if (!terms.every(w => T.includes(w))) return;
+    let sc = 0; terms.forEach(w => { if (title.includes(w)) sc += 10; if (s.path.toLowerCase().includes(w)) sc += 3; sc += Math.min(5, T.split(w).length - 1); });
+    const lines = s._t.split(' \n ').filter(l => terms.some(w => l.toLowerCase().includes(w)) && l !== s.title);
+    scored.push({s, sc, snip: lines.slice(0,2)});
+  });
+  scored.sort((a,b) => b.sc - a.sc);
+  $('main').innerHTML = banner() + `<p class="res-head">${scored.length} result${scored.length===1?'':'s'} for “${esc(q)}”</p>` + (scored.length ? scored.map(({s, snip}) =>
+    `<a class="res" href="#${s.id}"><div class="t"><span class="ms">${s.icon}</span>${hl(s.title, terms)}<span class="g">${esc(s.group)}</span></div><div class="s">${snip.map(l => hl(l.length>220?l.slice(0,220)+'…':l, terms)).join('<br>')}</div></a>`).join('')
+    : `<div class="box">No matches. Try a shorter word, for example <b>PF</b>, <b>leave</b>, <b>shift</b> or <b>payslip</b>.</div>`);
+  wireBanner();
+}
+
+function route(){
+  const id = decodeURIComponent(location.hash.slice(1));
+  $('side').classList.remove('open');
+  if (id && byId[id]) { renderScreen(byId[id]); renderNav(id); }
+  else if (id === 'troubleshooting') { renderTroubleshooting(); renderNav(id); }
+  else if (id === 'about') { renderAbout(); renderNav(id); }
+  else if (id === 'builder' && !META.export) { renderBuilder(); renderNav(id); }
+  else { renderHome(); renderNav(''); }
+  window.scrollTo(0,0);
+}
+setData(ALL);
+if (!META.export) getDownloads();
+if (META.export && META.client) document.querySelector('.brand small').textContent = META.client;
+window.addEventListener('hashchange', () => { $('q').value = ''; route(); });
+$('q').addEventListener('input', e => doSearch(e.target.value.trim()));
+$('q').addEventListener('keydown', e => { if (e.key === 'Escape'){ e.target.value=''; route(); } if (e.key === 'Enter'){ const a = $('main').querySelector('a.res'); if (a){ location.hash = a.getAttribute('href'); } } });
+document.addEventListener('keydown', e => { if (e.key === '/' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); $('q').focus(); } });
+$('lb').onclick = () => $('lb').classList.remove('on');
+$('homeLink').onclick = () => { location.hash = ''; route(); };
+$('menuBtn').onclick = () => $('side').classList.toggle('open');
+route();
+</script>
+</body>
+</html>

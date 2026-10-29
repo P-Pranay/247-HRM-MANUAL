@@ -1,0 +1,86 @@
+{
+ "date": "30 Oct 2026",
+ "reports": 85,
+ "modules": [
+  [
+   "core",
+   "Core HR",
+   "Employee master, organisation masters, documents, exits",
+   "employee data|employee master|core|core hr|hrms|employee management|application setup|employee|onboarding|exit"
+  ],
+  [
+   "payroll",
+   "Payroll",
+   "Salary, statutory (PF/ESI/PT), loans & advances, payslips",
+   "payroll|salary|statutory|pf|esi|loans|advances|loan"
+  ],
+  [
+   "itax",
+   "Income Tax",
+   "Tax setup, declarations, TDS/EMI",
+   "income tax|incometax|tds|tax|it declaration"
+  ],
+  [
+   "attendance",
+   "Attendance & Biometric",
+   "Shifts, punches, OT, late/early, incidents",
+   "attendance|biometric|time attendance|shift|punch|swipe"
+  ],
+  [
+   "leave",
+   "Leave",
+   "Leave types, comp-off, holidays, encashment",
+   "leave|leaves|holiday|comp off|compensatory"
+  ],
+  [
+   "letters",
+   "Letters",
+   "Letter templates and generation",
+   "letter|letters|letter generation"
+  ],
+  [
+   "helpdesk",
+   "Help Desk (Grievance)",
+   "Tickets, categories, routing",
+   "grievance|help desk|helpdesk|ticket|ticketing"
+  ],
+  [
+   "travel",
+   "Travel & Expenses",
+   "Local claims and travel requisitions",
+   "travel|expense|expenses|claim|claims|reimbursement|local claim"
+  ],
+  [
+   "asset",
+   "Asset Management",
+   "Asset groups, stores, allocation",
+   "asset|assets"
+  ],
+  [
+   "timesheet",
+   "Timesheet",
+   "Log time against projects",
+   "timesheet|time sheet|log time|project|projects"
+  ],
+  [
+   "ats",
+   "Recruitment / Pre-onboarding",
+   "Prospective employees and bulk invites",
+   "ats|recruitment|prospective|pre onboarding|pre-onboarding|hiring"
+  ],
+  [
+   "pms",
+   "Performance & Growth",
+   "PMS, 360, LMS, engagement",
+   "pms|performance|360|lms|learning|appraisal|goal|engagement"
+  ],
+  [
+   "rewards",
+   "Gifts & Rewards",
+   "Rewards and gifting add-on",
+   "gifts|rewards|social points|gifting"
+  ]
+ ],
+ "client": "",
+ "export": false
+}
