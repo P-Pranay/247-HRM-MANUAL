@@ -4676,64 +4676,122 @@
   "icon": "groups",
   "path": "☰ Menu > HR > Employee Master",
   "route": "#/EmployeeMaster/AllEmployees",
-  "summary": "Search, filter, sort and open your entire workforce from one card-based directory, and add new joiners.",
-  "next": "Use Search or the Sort by / Filter controls to find an employee, then click the card to see details or open the full profile.",
+  "summary": "Find, filter and open any employee from one card-based directory, and add new joiners.",
+  "next": "Type in the Search box, or choose a status in Sort by, then click an employee's card to see their details.",
   "can": [
-   "Search employees by typing in the Search box (matches as you type)",
-   "Sort the list A-Z or Z-A, or filter by status (Employed, Resigned, Terminated, In Active, Rejected, Waiting For Approval, or All)",
-   "Open the advanced Filter sidebar to narrow the list by your own criteria",
-   "Click any employee card to open its quick-detail panel on the right",
-   "View the full employee profile via the launch icon, the edit icon, or the View Full Profile button",
-   "Add a new employee with the Add Employee button (opens a blank employee record)",
-   "Jump to Bulk Upload to onboard many joiners at once"
+   "Search employees by typing in the Search box; results update about a second after you stop typing",
+   "Re-order the list with Alphabet A-Z or Alphabet Z-A, or show one status: Employed, Resigned, Terminated, In Active, Waiting For Approval, or All",
+   "Open the Filter sidebar to combine your own criteria",
+   "Click an employee card to open a quick-detail panel on the right (the first employee's panel opens by itself when the list loads)",
+   "Open the full profile from the launch icon, the edit icon or View Full Profile",
+   "Add a single new employee with Add Employee",
+   "Onboard many joiners at once with Bulk Upload",
+   "Open the Shortcuts (bolt) drawer for quick links to masters, uploads, employee reports and Company Settings, where it is enabled for your deployment"
   ],
   "concepts": [
    [
     "Employee status types",
-    "Each employee carries a lifecycle status: Employed (active staff), Resigned, Terminated, In Active, Rejected, and Waiting For Approval. The Sort by dropdown filters the directory to a single status, and 'All' shows every record. A colored dot in the detail panel marks the status, green for Employed, red for Resigned or Terminated, and gray for the rest."
+    "Each employee has a lifecycle status. Sort by lets you show Employed (active staff), Resigned, Terminated, In Active or Waiting For Approval, and 'All' shows every record. A coloured dot in the detail panel marks the status: green for Employed, red for Resigned or Terminated, grey for the rest."
    ],
    [
     "Sort by vs Filter sidebar",
-    "Sort by is a quick one-click control for alphabetical ordering (A-Z / Z-A) or a single status filter. The Filter icon opens a richer side panel where you can combine your own criteria; the count badge on the icon tells you how many employees matched. Using the sidebar switches Sort by to 'Select' so the two do not fight each other."
-   ],
-   [
-    "Quick-detail panel vs full profile",
-    "Clicking a card opens a read-only quick-detail panel on the right with contact, work and personal summary fields. To see or edit the complete record, use the launch icon on the card, the edit icon, or the View Full Profile button, which navigates to the full Employee Details screen."
-   ],
-   [
-    "Add Employee flow",
-    "Add Employee opens a brand-new, empty employee record (the full Employee Details form) so you can capture a single joiner end to end. It is gated by permission 5.0.1 and is the right path for one-off additions."
-   ],
-   [
-    "Bulk Upload",
-    "For onboarding many employees at once, Bulk Upload takes you to the Joinee Allowance upload screen where you import joiners from a file instead of adding each person manually."
+    "Sort by orders the list A-Z or Z-A, or shows a single status. The Filter icon opens a side panel where you combine your own criteria; the badge on the icon shows how many employees matched. Applying a filter switches Sort by to 'Select'. To leave filter mode, choose a status in Sort by."
    ],
    [
     "On Probation tag",
-    "Employees still in their probation period are flagged with an 'On Probation' tag on the card and in the detail panel. Hovering the tag reveals the regularization date, the date on which probation is expected to end."
+    "Employees still on probation carry an 'On Probation' tag on the card and in the detail panel. Hover over it to see the regularisation date, the date probation is expected to end."
    ]
   ],
   "rules": [
-   "The directory loads with Sort by set to 'Employed', so only currently employed staff appear until you change the filter to another status or 'All'",
-   "Search runs automatically about a second after you stop typing; clearing the box reloads the full list",
-   "The Add Employee button is only visible to users with permission code 5.0.1",
-   "View Profile / edit / View Full Profile actions require permission code 5.0.2",
-   "Resigned cards are visually marked, and the relieving date is shown only for employees whose status is 'Resigned'",
-   "Employees on probation show an 'On Probation' tag; hover it to see the regularization date",
-   "The card status label shows the server-supplied StatusName when available, otherwise the raw status",
-   "The list streams in batches (about 50 cards first, then 20 more each time you scroll to the bottom) for fast loading",
-   "If the emplo"
+   "The directory opens on 'Employed', so only current staff appear until you change Sort by to another status or 'All'",
+   "Search runs about a second after you stop typing; clearing the box reloads the full list. While Sort by is set to a status, search results are limited to that status",
+   "Resigned employees' cards are marked, and the relieving date is shown in the detail panel only for status 'Resigned'",
+   "The screen shows 50 employees first, then 20 more each time you scroll to the bottom",
+   "If the employee list fails to load, an error message appears as a notification"
   ],
-  "tips": [],
+  "tips": [
+   "Use the Sort by status options to review only Resigned, Terminated or Waiting For Approval staff",
+   "Close the detail panel with the X, or click the selected card again"
+  ],
   "watch": [],
   "fields": [],
   "img": "r-empmaster",
   "tabs": [],
-  "extra": [],
+  "extra": [
+   [
+    "Who can do this",
+    "Adding an employee needs permission 5.0.1. Opening or editing a profile needs 5.0.2. The Bulk Upload button is shown to everyone, but the screen it opens, Joinee Allowance / Deductions Upload, needs permission 13.13.1. Permissions are set per role under Settings > Roles."
+   ],
+   [
+    "Shortcuts (bolt icon)",
+    "A bolt button in the page header opens a drawer of quick links: organisation, salary and statutory masters, the new-joinee uploads, employee reports (Employee Listing Report and Joinee Resignee Report) and Company Settings. Each link appears only if you have its permission, and the button is hidden when none apply or Shortcuts is not enabled for your deployment."
+   ]
+  ],
   "mod": "core",
   "roles": [
    "hr"
-  ]
+  ],
+  "tasks": [
+   {
+    "title": "Find an employee",
+    "steps": [
+     "Type in the Search box. The list updates about a second after you stop typing.",
+     "If the person has left, change Sort by from 'Employed' to Resigned, Terminated, In Active or All.",
+     "Click their card to open the quick-detail panel. The first employee's panel is already open when the list loads, so click another card to switch.",
+     "Click View Full Profile (or the launch icon) to open the complete record."
+    ]
+   },
+   {
+    "title": "Add one new employee",
+    "steps": [
+     "Click Add Employee. A blank employee record opens.",
+     "Fill in the Basic, Employment and Attendance sections.",
+     "Click Save, or Next to continue to Payment Details."
+    ],
+    "see": "hr-add-edit-an-employee"
+   },
+   {
+    "title": "Onboard many joiners at once",
+    "steps": [
+     "Click Bulk Upload. The Joinee Allowance / Deductions Upload screen opens.",
+     "Choose the Upload Mode and set the filters.",
+     "Download the template, fill it in and upload it back.",
+     "Send the valid rows for approval."
+    ],
+    "see": "hr-uploads-bulk-data"
+   }
+  ],
+  "problems": [
+   {
+    "problem": "I can't find an employee who has left",
+    "fix": "The directory opens on 'Employed', and search follows Sort by. Change Sort by to Resigned, Terminated, In Active or All."
+   },
+   {
+    "problem": "The Add Employee button is missing",
+    "fix": "Your role does not have permission 5.0.1. Ask an admin to add it under Settings > Roles.",
+    "see": "roles"
+   },
+   {
+    "problem": "I can't open or edit a full profile",
+    "fix": "Your role needs permission 5.0.2. Ask an admin to add it under Settings > Roles.",
+    "see": "roles"
+   },
+   {
+    "problem": "Sort by changed to 'Select' after I used the Filter",
+    "fix": "This is expected. The Filter sidebar takes over from Sort by. To leave filter mode, choose a status in Sort by."
+   },
+   {
+    "problem": "Search shows nothing straight away",
+    "fix": "Search runs about a second after you stop typing. Clearing the box reloads the full list."
+   }
+  ],
+  "related": [
+   "hr-add-edit-an-employee",
+   "hr-prospective-employee",
+   "hr-uploads-bulk-data",
+   "roles"
+  ],
+  "alt": "Employee Directory: Search box, Sort by set to Employed, Bulk Upload and Add Employee buttons, and the first employee card with its status tag"
  },
  {
   "id": "hr-add-edit-an-employee",
