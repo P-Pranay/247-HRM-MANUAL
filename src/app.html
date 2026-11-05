@@ -12,13 +12,14 @@ const store = { get(k, d){ try { const v = localStorage.getItem(k); return v ? J
 
 function searchText(s){
   return [s.title, s.group, s.path, s.summary, s.next, ...(s.can||[]), ...(s.rules||[]), ...(s.tips||[]), ...(s.watch||[]), ...(s.tabs||[]),
+    ...(s.tasks||[]).flatMap(t => [t.title, ...t.steps]), ...(s.problems||[]).flatMap(q => [q.problem, q.fix]),
     ...(s.concepts||[]).flat(), ...(s.fields||[]).flatMap(st => [st.step, ...st.fields.flatMap(f => [f.label, f.hint||''])]), ...(s.extra||[]).map(e => e[0] + ' ' + e[1])].join(' \n ');
 }
 function setData(list){
   DATA = list; DATA.forEach(s => s._t = searchText(s));
   byId = Object.fromEntries(DATA.map(s => [s.id, s]));
   groups = []; DATA.forEach(s => { let g = groups.find(x => x.name === s.group); if (!g) groups.push(g = {name: s.group, items: []}); g.items.push(s); });
-  ISSUES = DATA.filter(s => s.watch && s.watch.length);
+  ISSUES = DATA.filter(s => (s.watch && s.watch.length) || (s.problems && s.problems.length));
 }
 
 /* ---------- filtering for a client profile ---------- */
@@ -80,6 +81,25 @@ function list(title, icon, items, cls){
   return `<div class="box ${cls||''}"><h3><span class="ms">${icon}</span>${title}</h3><ul class="chk">${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
 }
 function imgSrc(s){ return s.imgData || `img/${s.img}.jpg`; }
+/* Link to another screen only if it is in the current manual (client manuals omit some screens). */
+const screenLink = id => byId[id] ? `<a href="#${id}">${esc(byId[id].title)}</a>` : '';
+function howTo(s){
+  if (!s.tasks || !s.tasks.length) return '';
+  return `<div class="box howto"><h3><span class="ms">format_list_numbered</span>How to</h3>${s.tasks.map(t =>
+    `<h4>${esc(t.title)}</h4><ol>${t.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>${t.see && screenLink(t.see) ? `<p class="note">More detail: ${screenLink(t.see)}</p>` : ''}`).join('')}</div>`;
+}
+function problemsTable(items){
+  return `<table class="fields"><thead><tr><th>If you see this</th><th>Do this</th></tr></thead><tbody>${items.map(q =>
+    `<tr><td>${esc(q.problem)}</td><td>${esc(q.fix)}${q.see && screenLink(q.see) ? ` (${screenLink(q.see)})` : ''}</td></tr>`).join('')}</tbody></table>`;
+}
+function problemsBox(s){
+  if (!s.problems || !s.problems.length) return '';
+  return `<div class="box"><h3><span class="ms">build</span>If something goes wrong</h3>${problemsTable(s.problems)}</div>`;
+}
+function relatedBox(s){
+  const links = (s.related||[]).map(screenLink).filter(Boolean);
+  return links.length ? `<div class="box"><h3><span class="ms">link</span>Related screens</h3><div class="chips">${links.map(l => `<span class="chip">${l}</span>`).join('')}</div></div>` : '';
+}
 
 function renderHome(){
   const who = META.client || (PREVIEW && PREVIEW.client);
@@ -115,14 +135,16 @@ function renderScreen(s){
   ${META.export ? '' : `<div class="tags">${s.mod!=='base'?`<span class="tag mod">${esc(MODNAME[s.mod]||s.mod)}</span>`:'<span class="tag mod">All clients</span>'}${s.roles.map(r=>`<span class="tag">${esc(ROLES.find(x=>x[0]===r)[1])}</span>`).join('')}</div>`}</div></div>
   <p class="summary">${esc(s.summary)}</p>`;
   if (s.next) h += `<div class="next"><span class="ms">arrow_circle_right</span><div><b>Do this first:</b> ${esc(s.next)}</div></div>`;
-  if (s.img) h += `<figure class="shot"><img src="${imgSrc(s)}" alt="Screenshot: ${esc(s.title)}" loading="lazy"><figcaption>Screenshot from the demo environment — click to enlarge</figcaption></figure>`;
+  if (s.img) h += `<figure class="shot"><img src="${imgSrc(s)}" alt="${esc(s.alt || 'Screenshot: ' + s.title)}" loading="lazy"><figcaption>Screenshot from the demo environment — click to enlarge</figcaption></figure>`;
   if (s.tabs && s.tabs.length) h += `<div class="box"><h3><span class="ms">tab</span>Tabs on this screen</h3><div class="chips">${s.tabs.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div></div>`;
+  h += howTo(s);
   h += list(s.id==='setup'?'Steps, in order':'What you can do here', s.id==='setup'?'format_list_numbered':'checklist', s.can, s.id==='setup'?'steps':'');
   (s.extra||[]).forEach(e => { if (e[1]) h += `<div class="box extra"><h3><span class="ms">info</span>${esc(e[0])}</h3><p>${esc(e[1])}</p></div>`; });
   h += fieldsTable(s.fields);
   if (s.concepts && s.concepts.length) h += `<div class="box"><h3><span class="ms">menu_book</span>Key concepts</h3>${s.concepts.map(([a,b]) => `<div class="concept"><b>${esc(a)}</b><p>${esc(b)}</p></div>`).join('')}</div>`;
   h += `<div class="grid"><div>${list('Important rules','policy',s.rules,'rules')}</div><div>${list('Tips to go faster','bolt',s.tips,'tips')}</div></div>`;
   h += list('Watch out for','error',s.watch,'watch');
+  h += problemsBox(s) + relatedBox(s);
   h += `<div class="pn">${prev?`<a href="#${prev.id}"><small>← Previous</small>${esc(prev.title)}</a>`:'<span></span>'}${next?`<a class="r" href="#${next.id}"><small>Next →</small>${esc(next.title)}</a>`:'<span></span>'}</div>`;
   $('main').innerHTML = h; wireBanner();
   $('main').querySelectorAll('.shot img').forEach(im => im.onclick = () => { $('lbImg').src = im.src; $('lb').classList.add('on'); });
@@ -131,7 +153,7 @@ function renderScreen(s){
 function renderTroubleshooting(){
   let h = banner() + `<div class="head"><div class="ic"><span class="ms">build</span></div><div><h1>Common mistakes & fixes</h1><div class="path"><span class="ms">route</span>Collected from every screen's “Watch out for” notes</div></div></div>
   <p class="summary">The validation errors and slips users hit most often, screen by screen. Use the search box to find one quickly.</p>`;
-  ISSUES.forEach(s => h += `<div class="box issue"><h4><a href="#${s.id}"><span class="ms">${s.icon}</span> ${esc(s.title)}</a> <span class="note">· ${esc(s.group)}</span></h4><ul class="chk">${s.watch.map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`);
+  ISSUES.forEach(s => h += `<div class="box issue"><h4><a href="#${s.id}"><span class="ms">${s.icon}</span> ${esc(s.title)}</a> <span class="note">· ${esc(s.group)}</span></h4>${s.watch && s.watch.length ? `<ul class="chk">${s.watch.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : ''}${s.problems && s.problems.length ? problemsTable(s.problems) : ''}</div>`);
   $('main').innerHTML = `<div class="watch">${h}</div>`; wireBanner();
 }
 function renderAbout(){
