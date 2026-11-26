@@ -2,8 +2,8 @@
 
 A searchable, screen-by-screen user manual for the 247HRM web application, with a **client manual builder** that produces a tailored manual for each client from the modules they purchased and the roles that will use it.
 
-- 90 screens: getting started, settings, all 34 masters, HR operations, employee self-service, dashboards and reports
-- 84 screenshots from the 247HRM demo environment
+- 99 screens: getting started, settings, all 34 masters, HR operations, employee self-service, dashboards and reports
+- 86 screenshots of the redesigned interface (UAT release V15.14.14, November 2026)
 - Instant search across screen names, menu paths, fields, rules and tips (press `/`)
 - Client manual builder: upload the purchased-module list (Excel/CSV), pick roles (HR/Admin, Manager, Employee), optionally upload a role's menu list, then download a single self-contained HTML manual for the client
 
@@ -75,12 +75,8 @@ To add or rename a sellable module, edit the `modules` list in `src/meta.json`. 
 
 ## Before publishing publicly
 
-The screenshots come from the 247HRM demo company. Check them before making the site public:
+The screenshots come from a 247HRM test environment. Before publishing, personal details were blurred: the signed-in user's name in the top bar, employee names, IDs and phone numbers in lists, salary, loan and claim amounts, and the Web Check-in IP address and location. There is no My Profile screenshot. If you retake screenshots, blur the same areas before pushing to a public repository.
 
-- The My Profile screenshot was removed from this public repository because it showed a demo user's email address.
-- Several list screenshots show demo employee names and salary totals.
-
-Replace or blur these, or keep the repository and its Pages site private.
 
 ## Local preview
 
