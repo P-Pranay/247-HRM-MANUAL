@@ -30,6 +30,7 @@ function applyProfile(p){
       if (c.extra) c.extra = c.extra.filter(e => !e[2] || mods.has(e[2]));
       if (!p.shots) c.img = '';
       if (p.hideProfileShot && c.id === 'ess-my-profile') c.img = '';
+      if (!p.shots) delete c.tabImgs;
       return c;
     });
 }
@@ -80,6 +81,7 @@ function list(title, icon, items, cls){
   return `<div class="box ${cls||''}"><h3><span class="ms">${icon}</span>${title}</h3><ul class="chk">${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
 }
 function imgSrc(s){ return s.imgData || `img/${s.img}.jpg`; }
+function tabSrc(s,t){ return (s.tabData && s.tabData[t]) || `img/${s.tabImgs[t]}.jpg`; }
 
 function renderHome(){
   const who = META.client || (PREVIEW && PREVIEW.client);
@@ -116,7 +118,7 @@ function renderScreen(s){
   <p class="summary">${esc(s.summary)}</p>`;
   if (s.next) h += `<div class="next"><span class="ms">arrow_circle_right</span><div><b>Do this first:</b> ${esc(s.next)}</div></div>`;
   if (s.img) h += `<figure class="shot"><img src="${imgSrc(s)}" alt="Screenshot: ${esc(s.title)}" loading="lazy"><figcaption>Screenshot from the 247HRM test environment — click to enlarge</figcaption></figure>`;
-  if (s.tabs && s.tabs.length) h += `<div class="box"><h3><span class="ms">tab</span>Tabs on this screen</h3><div class="chips">${s.tabs.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div></div>`;
+  if (s.tabs && s.tabs.length) h += `<div class="box"><h3><span class="ms">tab</span>Tabs on this screen</h3><div class="chips">${s.tabs.map(t=>(s.tabImgs && s.tabImgs[t]) ? `<button type="button" class="chip chip-img" data-tsrc="${tabSrc(s,t)}" title="Show the ${esc(t)} screen"><span class="ms">image</span>${esc(t)}</button>` : `<span class="chip">${esc(t)}</span>`).join('')}</div>${s.tabImgs ? '<p class="note">Click a tab with a picture icon to see its screen.</p>' : ''}</div>`;
   h += list(s.id==='setup'?'Steps, in order':'What you can do here', s.id==='setup'?'format_list_numbered':'checklist', s.can, s.id==='setup'?'steps':'');
   (s.extra||[]).forEach(e => { if (e[1]) h += `<div class="box extra"><h3><span class="ms">info</span>${esc(e[0])}</h3><p>${esc(e[1])}</p></div>`; });
   h += fieldsTable(s.fields);
@@ -126,6 +128,7 @@ function renderScreen(s){
   h += `<div class="pn">${prev?`<a href="#${prev.id}"><small>← Previous</small>${esc(prev.title)}</a>`:'<span></span>'}${next?`<a class="r" href="#${next.id}"><small>Next →</small>${esc(next.title)}</a>`:'<span></span>'}</div>`;
   $('main').innerHTML = h; wireBanner();
   $('main').querySelectorAll('.shot img').forEach(im => im.onclick = () => { $('lbImg').src = im.src; $('lb').classList.add('on'); });
+  $('main').querySelectorAll('.chip-img').forEach(c => c.onclick = () => { $('lbImg').src = c.dataset.tsrc; $('lb').classList.add('on'); });
 }
 
 function renderTroubleshooting(){
@@ -272,6 +275,7 @@ async function exportManual(msgEl){
   const p = JSON.parse(JSON.stringify(B));
   const list = applyProfile(p).map(s => { delete s._t; return s; });
   for (const s of list) { if (s.img) { try { s.imgData = await toDataURL(`img/${s.img}.jpg`); } catch(e) { s.img = ''; } } }
+  for (const s of list) { if (s.tabImgs) { s.tabData = {}; for (const [t,n] of Object.entries(s.tabImgs)) { try { s.tabData[t] = await toDataURL(`img/${n}.jpg`); } catch(e) { delete s.tabImgs[t]; } } } }
   const meta = Object.assign({}, META, {export:true, client: p.client.trim(), modulesIncluded: p.modules.map(m => MODNAME[m]),
     roleLabel: p.roles.map(r => ROLES.find(x=>x[0]===r)[1]).join(', ')});
   const doc = document.documentElement.cloneNode(true);

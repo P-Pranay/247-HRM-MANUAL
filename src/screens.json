@@ -104,7 +104,14 @@
    "hr",
    "manager",
    "employee"
-  ]
+  ],
+  "tabImgs": {
+   "Home": "welcome",
+   "CXO": "d-cxo",
+   "HR": "d-hr",
+   "Manager": "d-mgr",
+   "Attendance": "d-att"
+  }
  },
  {
   "id": "layout",
@@ -5039,7 +5046,14 @@
   "mod": "core",
   "roles": [
    "hr"
-  ]
+  ],
+  "tabImgs": {
+   "Employees": "r-empmaster",
+   "Prospective Employees": "r-prospective",
+   "Letter Generation": "r-letters",
+   "Delete Document": "r-deldoc",
+   "Holiday Management": "r-holiday"
+  }
  },
  {
   "id": "hr-employee-master-directory",
@@ -5157,7 +5171,15 @@
   "mod": "payroll",
   "roles": [
    "hr"
-  ]
+  ],
+  "tabImgs": {
+   "Payroll": "r-payroll",
+   "Payslips": "r-payslip",
+   "Arrears Calculation": "r-arrears",
+   "Bonus Calculation": "r-bonus",
+   "Exgratia Calculation": "r-exgratia",
+   "Stop Salary": "r-stopsal"
+  }
  },
  {
   "id": "hr-add-edit-an-employee",
@@ -7225,7 +7247,10 @@
    "hr",
    "manager",
    "employee"
-  ]
+  ],
+  "tabImgs": {
+   "Attendance Calendar": "r-leaves"
+  }
  },
  {
   "id": "ess-team-approvals",
@@ -8223,7 +8248,11 @@
   "roles": [
    "hr",
    "manager"
-  ]
+  ],
+  "tabImgs": {
+   "Attendance Board": "d-mgr",
+   "Leave Board": "d-mgr-leave"
+  }
  },
  {
   "id": "dash-attendance",
