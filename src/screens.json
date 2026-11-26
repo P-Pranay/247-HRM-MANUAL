@@ -120,35 +120,61 @@
   "icon": "dashboard_customize",
   "path": "Every screen",
   "route": "",
-  "summary": "The redesigned layout has a collapsible side menu on the left (grouped into My Work, HR Admin and Company), a top bar with global search, Web Check-in, Go Social, the approvals bell, theme toggle, the Settings gear and your profile, and a ? icon on most screens that opens a Guide panel.",
-  "next": "",
+  "summary": "The redesigned screen has a side menu on the left, a top bar across the top and the page in the middle. The side menu can be shown in three layouts (Grouped sidebar, Classic sidebar or App menu), chosen from your profile menu. Most screens have a ? icon that opens a Guide panel for that screen.",
+  "next": "Pick a menu layout from your name (top right) > Menu layout, then use the side menu or Ctrl K search to open a screen.",
   "can": [
-   "Side menu (☰ toggles icons-only / full width): Dashboard, Approvals; MY WORK — My Profile, Leave & Attendance, Web Check-in, Log Time, Compensatory Off, My Pay (Payslip, Income Tax Saving), My Requests (Advances, Loans, Local Claim, Leave Encashment, Travel Requisition, Resignation), Employee Assets, Uploads, Reports; HR ADMIN — Employee Management, Payroll Management, Leave Encashment (HR), Finance (Advances Management, Loans Management, Final Settlement, EMI); COMPANY — Company Policy, Help Desk, Gifts & Rewards; 247 HRM Support",
-   "Find a menu: type in the 'Find a menu' box at the top of the expanded side menu",
+   "Side menu (☰ shows full names or icons only): in the default Grouped sidebar it is grouped into Dashboard, Approvals, MY WORK, HR ADMIN and COMPANY; type in 'Find a menu' to filter it",
+   "Menu layout (your name > Menu layout): Grouped sidebar — menus under My Work, HR Admin and Company; Classic sidebar — the original menu list (My Applications, HR, Tax); App menu — no sidebar, open every menu from a grid of app tiles via the ⊞ icon at top left",
    "Global search (Ctrl K): find people, pages, reports and quick actions from anywhere",
-   "Web Check-in icon (running man): check in / check out from the browser",
+   "Web Check-in (running-man icon): check in or check out from the browser with purpose and notes; needs camera and location permission when selfie or location capture is switched on",
    "Go Social: open the company social timeline",
-   "Bell: pending approvals with a count for each approval type",
+   "Bell: pending approvals, with a count for each approval type",
+   "Theme (sun / moon icon): Light, Dark or System, plus a choice of accent colours",
    "Settings gear: Manage Ticketing Details, Roles, IP Security, Company Settings, MFA Settings, Approval Configuration, Notification and Masters",
+   "Profile menu (your name): Change Password, Menu layout and Logout",
    "Guide panel (?): what the screen does, the next step, key concepts, rules, tips and common mistakes",
-   "HR Mate chatbot (bottom right): quick actions such as Request Leave, View Leave Balance, Get Payslip and Upcoming Holidays"
+   "HR Mate chatbot (bottom right): quick actions such as Request Leave, View Leave Balance, Get Payslip and Upcoming Holidays",
+   "Dashboard tabs: Home, CXO, HR, Manager and Attendance across the top of the Dashboard"
   ],
   "concepts": [],
   "rules": [],
   "tips": [
+   "Each user picks their own menu layout and theme; they don't change anything for other users",
    "Employee Management and Payroll Management are hub pages: their screens open as tabs across the top instead of separate menu items",
+   "This manual uses the Grouped sidebar names in its menu paths; see 'Classic sidebar menu names' below if you use the Classic layout",
    "Most lists support Search, Reset, Advanced filters, column filters, show/hide columns, export and paging",
    "Fields marked * are mandatory; system-generated IDs are read-only",
-   "If a menu, tab or Quick Action is missing for a user, check the role's permissions in Settings > Roles"
+   "If a menu, tab or quick action is missing for a user, check the role's permissions in Settings > Roles"
   ],
   "watch": [],
   "fields": [],
   "img": "sidemenu",
-  "tabs": [],
+  "tabs": [
+   "Side menu (Grouped sidebar)",
+   "Classic sidebar",
+   "App menu",
+   "Global search (Ctrl K)",
+   "Web Check-in",
+   "Approvals bell",
+   "Theme & colour",
+   "Settings gear",
+   "Profile menu & Menu layout",
+   "Guide panel (?)",
+   "HR Mate chatbot",
+   "Dashboard tabs"
+  ],
   "extra": [
    [
     "Where did my old menu go?",
-    "Settings moved from the More (⋮) menu to the gear icon in the top bar. HR > Employee Master, Prospective Employee, Letter Generation, Delete Document and Holiday Management are now tabs in HR Admin > Employee Management. HR > Payroll, Payslips, Arrears, Bonus, Exgratia and Stop Salary are tabs in HR Admin > Payroll Management. Advances Management, Loans Management, Final Settlement and Tax > EMI are under HR Admin > Finance. My Applications items moved to My Work, My Pay and My Requests."
+    "Settings moved from the More (⋮) menu to the gear icon in the top bar. HR > Employee Master, Prospective Employee, Letter Generation, Delete Document and Holiday Management are now tabs in HR Admin > Employee Management. HR > Payroll, Payslips, Arrears, Bonus, Exgratia and Stop Salary are tabs in HR Admin > Payroll Management. Advances Management, Loans Management, Final Settlement and EMI are under HR Admin > Finance. My Applications items moved to My Work, My Pay and My Requests. To get the old menu list back, choose your name > Menu layout > Classic sidebar."
+   ],
+   [
+    "Classic sidebar menu names",
+    "My Profile • Dashboard • Approvals • My Applications (Web Check-in, Leave & Attendance, Compensatory Off, Income Tax Saving, Payslip, Resignation, Advances, Loans, Travel Requisition, Leave Encashment, Local Claim) • HR (Employee Management, Payroll Management, Advances Management, Loans Management, Leave Encashment (HR), Final Settlement) • Tax (EMI) • Help Desk • Log Time • Employee Assets • Uploads • Company Policy • Reports • Gifts & Rewards • 247 HRM Support"
+   ],
+   [
+    "App menu",
+    "The ⊞ icon at top left opens a full-screen Apps panel: tiles grouped into Home, My Work, HR Admin, Company and Support, with a 'Search menus' box at the top. Use the arrow keys to move, Enter to open and Esc to close."
    ]
   ],
   "mod": "base",
@@ -156,7 +182,24 @@
    "hr",
    "manager",
    "employee"
-  ]
+  ],
+  "tabImgs": {
+   "Side menu (Grouped sidebar)": "sidemenu",
+   "Classic sidebar": "nav-classic",
+   "App menu": "nav-appmenu",
+   "Global search (Ctrl K)": "search",
+   "Web Check-in": "nav-checkin",
+   "Approvals bell": "approvals-bell",
+   "Theme & colour": "nav-theme",
+   "Settings gear": "nav-settings",
+   "Profile menu & Menu layout": "nav-profile",
+   "Guide panel (?)": "nav-guide",
+   "HR Mate chatbot": "hrmate",
+   "Dashboard tabs": "welcome"
+  },
+  "tabsTitle": "Parts of the screen",
+  "tabsIcon": "dashboard",
+  "tabsNote": "Click a part to see it on screen."
  },
  {
   "id": "search",
