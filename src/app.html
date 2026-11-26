@@ -5,7 +5,7 @@ const MODS = META.modules || [];
 const MODNAME = Object.fromEntries(MODS.map(m => [m[0], m[1]]));
 const ROLES = [['hr','HR / Admin','Full HR and admin menus: settings, masters, HR operations, reports'],['manager','Manager','Self-service plus team approvals and the Manager dashboard'],['employee','Employee (ESS)','Self-service only: profile, attendance, leave, payslip, claims']];
 let DATA, byId, groups, ISSUES, PREVIEW = null;
-const GICON = {'Getting started':'rocket_launch','Implementation setup':'checklist','Settings':'settings','Masters':'apps','Masters — Organization':'domain','Masters — Attendance':'schedule','Masters — Salary':'payments','Masters — Statutory':'gavel','Masters — Income Tax Setup':'calculate','Masters — Others':'category','HR operations':'badge','My Applications (self-service)':'person','Dashboards & Reports':'analytics','Help':'help'};
+const GICON = {'Getting started':'rocket_launch','Implementation setup':'checklist','Settings':'settings','Masters':'apps','Masters — Organization':'domain','Masters — Attendance':'schedule','Masters — Salary':'payments','Masters — Statutory':'gavel','Masters — Income Tax Setup':'calculate','Masters — Others':'category','HR operations':'badge','My Work (self-service)':'person','Dashboards & Reports':'analytics','Help':'help'};
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $ = id => document.getElementById(id);
 const store = { get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
@@ -115,7 +115,7 @@ function renderScreen(s){
   ${META.export ? '' : `<div class="tags">${s.mod!=='base'?`<span class="tag mod">${esc(MODNAME[s.mod]||s.mod)}</span>`:'<span class="tag mod">All clients</span>'}${s.roles.map(r=>`<span class="tag">${esc(ROLES.find(x=>x[0]===r)[1])}</span>`).join('')}</div>`}</div></div>
   <p class="summary">${esc(s.summary)}</p>`;
   if (s.next) h += `<div class="next"><span class="ms">arrow_circle_right</span><div><b>Do this first:</b> ${esc(s.next)}</div></div>`;
-  if (s.img) h += `<figure class="shot"><img src="${imgSrc(s)}" alt="Screenshot: ${esc(s.title)}" loading="lazy"><figcaption>Screenshot from the demo environment — click to enlarge</figcaption></figure>`;
+  if (s.img) h += `<figure class="shot"><img src="${imgSrc(s)}" alt="Screenshot: ${esc(s.title)}" loading="lazy"><figcaption>Screenshot from the 247HRM test environment — click to enlarge</figcaption></figure>`;
   if (s.tabs && s.tabs.length) h += `<div class="box"><h3><span class="ms">tab</span>Tabs on this screen</h3><div class="chips">${s.tabs.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div></div>`;
   h += list(s.id==='setup'?'Steps, in order':'What you can do here', s.id==='setup'?'format_list_numbered':'checklist', s.can, s.id==='setup'?'steps':'');
   (s.extra||[]).forEach(e => { if (e[1]) h += `<div class="box extra"><h3><span class="ms">info</span>${esc(e[0])}</h3><p>${esc(e[1])}</p></div>`; });
@@ -137,7 +137,7 @@ function renderTroubleshooting(){
 function renderAbout(){
   const scope = META.export ? `<p>Prepared for <b>${esc(META.client||'your organisation')}</b>${META.roleLabel?` (${esc(META.roleLabel)})`:''}. It covers the modules in your 247HRM subscription: ${esc((META.modulesIncluded||[]).join(', ') || 'core screens')}.</p>` : '';
   $('main').innerHTML = banner() + `<div class="head"><div class="ic"><span class="ms">info</span></div><div><h1>About this manual</h1><div class="path"><span class="ms">event</span>Prepared ${esc(META.date)}</div></div></div>
-  <div class="box">${scope}<p>Descriptions, rules and tips come from the application's own screens and in-app Guide panels. Screenshots show sample data from the 247HRM demo company, so names and figures will differ from yours.</p>
+  <div class="box">${scope}<p>Descriptions, rules and tips come from the application's own screens and in-app Guide panels. Screenshots were taken in November 2026 from a 247HRM test environment running the redesigned interface (release V15.14.14). They show sample data, so names and figures will differ from yours.</p>
   <p>Menus you see depend on the role assigned to your login. Screens and fields can change with product releases; if what you see differs from this manual, the live application is correct. For help, raise a ticket in Help Desk or contact your 247HRM implementation consultant.</p></div>`;
   wireBanner();
 }
